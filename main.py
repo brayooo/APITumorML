@@ -5,14 +5,8 @@ import keras
 
 app = Flask(__name__)
 
-model = keras.models.load_model('tumorsModel.h5')
+model = keras.models.load_model('../IsATumor/tumorsModel.h5')
 
-
-def names(number):
-    if number == 0:
-        return 'Its a Tumor'
-    else:
-        return 'No, Its not a tumor'
 
 
 @app.route('/predict', methods=['POST'])
@@ -34,6 +28,13 @@ def predict():
                 'conclusion': names(classification)
             }
             return jsonify(result)
+def names(classification):
+    tumor_types = ['glioma', 'meningioma', 'notumor', 'pituitary']
+
+    if classification >= 0 and classification < len(tumor_types):
+        return tumor_types[classification]
+    else:
+        return 'notumor'
 
 
 def allowed_file(filename):
