@@ -54,15 +54,6 @@ def preprocess_image(image):
 
     return x
 
-def names(classification):
-    tumor_types = ['glioma', 'meningioma', 'notumor', 'pituitary']
-
-    if classification >= 0 and classification < len(tumor_types):
-        return tumor_types[classification]
-    else:
-        return 'notumor'
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
