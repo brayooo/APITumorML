@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify
 from PIL import Image
 import numpy as np
+import io
 import keras
 
+model = keras.models.load_model('tumorsModel.h5')
+
 app = Flask(__name__)
-
-model = keras.models.load_model('../IsATumor/tumorsModel.h5')
-
 
 
 @app.route('/predict', methods=['POST'])
@@ -18,16 +18,20 @@ def predict():
         file = request.files[file_name]
 
         if file and allowed_file(file.filename):
-            img = Image.open(file.stream)
-            x = np.array(img.resize((128, 128)))
-            x = x.reshape(1, 128, 128, 3)
-            res = model.predict_on_batch(x)
+            image = Image.open(io.BytesIO(file.read()))
+            processed_image = preprocess_image(image)
+            res = model.predict_on_batch(processed_image)
             classification = np.where(res == np.amax(res))[1][0]
+
             result = {
-                'confidence': str(res[0][classification] * 100),
-                'conclusion': names(classification)
+                "filename": file.filename,
+                "probability": str(res[0][classification] * 100) + '%',
+                "conclusion": names(classification)
             }
+
             return jsonify(result)
+        return "No valid image files found", 400
+
 def names(classification):
     tumor_types = ['glioma', 'meningioma', 'notumor', 'pituitary']
 
@@ -37,8 +41,25 @@ def names(classification):
         return 'notumor'
 
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}
+
+
+def preprocess_image(image):
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+    x = np.array(image.resize((128, 128)))
+    x = x.reshape(1, 128, 128, 3)
+
+    return x
+
+def names(number):
+    if number == 0:
+        return 'Its a Tumor'
+    else:
+        return 'No, Its not a tumor'
+
 
 
 if __name__ == '__main__':
